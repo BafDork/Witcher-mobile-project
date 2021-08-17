@@ -1,145 +1,99 @@
 part of game;
 
-const String _pathMenu = 'assets/menu/';
-
 class Menu extends Screen {
-
   Menu(PersistentGameState gameState) : super(gameState);
 
-  @override _getAssets() {
-    int geralt = _gameState.getSpritesCount(_pathMenu + 'geralt');
-    int bonfire = _gameState.getSpritesCount(_pathMenu + 'bonfire');
-    int effects = _gameState.getSpritesCount(_pathMenu + 'effects');
-    _assets.addAll(
-        [_pathMenu + 'name.png', _pathMenu + 'background.png', _pathMenu + 'start.png']);
+  @override
+  _getAssets() {
+    int geralt = _gameState.getSpritesCount(pathMenu + 'geralt');
+    int bonfire = _gameState.getSpritesCount(pathMenu + 'bonfire/sprites');
+    int effects = _gameState.getSpritesCount(pathMenu + 'effects');
+    List<String> assets = [
+      pathMenu + 'name.png',
+      pathMenu + 'background.png',
+      pathMenu + 'start.png'
+    ];
     for (int i = 0; i < [geralt, bonfire, effects].reduce(max); i++) {
       if (i < effects) {
-        _assets.add(_pathMenu + 'effects/frame$i.png');
+        assets.add(pathMenu + 'effects/frame$i.png');
       }
       if (i < bonfire) {
-        _assets.add(_pathMenu + 'bonfire/frame$i.png');
+        assets.add(pathMenu + 'bonfire/sprites/frame$i.png');
       }
       if (i < geralt) {
-        _assets.add(_pathMenu + 'geralt/frame$i.png');
+        assets.add(pathMenu + 'geralt/frame$i.png');
       }
     }
+    return assets;
+  }
+
+  @override
+  List<String> getSounds() {
+    return ['menu/music.mp3', 'menu/bonfire/sound.mp3'];
   }
 }
 
 class MenuScene extends StatefulWidget {
   final PersistentGameState _gameState;
+  final VoidCallback _switchToGameplay;
 
-  MenuScene(this._gameState);
+  MenuScene(this._gameState, this._switchToGameplay);
 
   State<MenuScene> createState() => new MenuSceneState();
 }
 
 class MenuSceneState extends State<MenuScene> {
-
-  void initState() {
-    super.initState();
-  }
-
   Widget build(BuildContext context) {
-    return Stack(
-      children: <Widget>[
-        new SpriteWidget(new SpritesTreeMenu(widget._gameState)),
-        new SpriteWidget(new StartTitle(widget._gameState)),
-        new TextureButton(
-            onPressed: () {
-              Navigator.pushNamed(context, '/gameplay');
-            },
-            label: "PLAY")
-      ],
-    );
-  }
-}
-
-class StartTitle extends NodeWithSize {
-  final PersistentGameState _gameState;
-  StartTitleSprite _startTitle;
-
-  StartTitle(this._gameState) : super(const Size(1920.0, 1080.0)) {
-    _startTitle = new StartTitleSprite(_gameState._images);
-    userInteractionEnabled = true;
-    addChild(_startTitle);
-  }
-
-  @override
-  bool handleEvent(SpriteBoxEvent event) {
-//if (event.type == PointerDownEvent) {
-//}
-    return true;
-  }
-}
-
-class StartTitleSprite extends Sprite {
-  final ImageMap _images;
-  Sprite _title;
-
-  StartTitleSprite(this._images) {
-    userInteractionEnabled = true;
-    _title = new Sprite.fromImage(_images[_pathMenu + 'start.png']);
-    _title.position = Offset(500.0, 500.0);
-    addChild(_title);
+    return new SpriteWidget(
+        new SpritesTreeMenu(widget._gameState, widget._switchToGameplay));
   }
 }
 
 class SpritesTreeMenu extends NodeWithSize {
-  final PersistentGameState _gameState;
-  MenuSprites _menuSprites;
-  GeraltMenu _geralt;
-  Bonfire _bonfire;
-  Effects _effects;
+  VoidCallback _onPressed;
 
-  SpritesTreeMenu(this._gameState) : super(const Size(1920.0, 1080.0)) {
-    _menuSprites = new MenuSprites(_gameState._images);
-    _geralt = new GeraltMenu(_gameState);
-    _bonfire = new Bonfire(_gameState);
-    _effects = new Effects(_gameState);
-    addChild(_menuSprites);
-    addChild(_geralt);
-    addChild(_bonfire);
-    addChild(_effects);
+  SpritesTreeMenu(PersistentGameState gameState, this._onPressed)
+      : super(resolution) {
+    userInteractionEnabled = true;
+    MenuSprites menuSprites = new MenuSprites(gameState._images);
+    SpriteGroup geralt = new SpriteGroup(gameState, Offset(240, 670), 3.2)
+      ..createGroup(pathMenu + 'geralt');
+    SpriteGroup bonfire = new SpriteGroup(gameState, Offset(565, 770), 0.9)
+      ..createGroup(pathMenu + 'bonfire/sprites');
+    SpriteGroup effects = new SpriteGroup(gameState, Offset(960, 540), 8)
+      ..createGroup(pathMenu + 'effects');
+    addChild(menuSprites);
+    addChild(bonfire);
+    addChild(geralt);
+    addChild(effects);
+  }
+
+  @override
+  bool handleEvent(SpriteBoxEvent event) {
+    Offset pointLeftTop = Offset(390, 271);
+    Offset pointRightLower = Offset(640, 310);
+    if ((event.type is PointerDownEvent) &&
+        checkHandleTouch(event.boxPosition, pointLeftTop, pointRightLower)) {
+      _onPressed();
+    }
+    return super.handleEvent(event);
   }
 }
 
 class MenuSprites extends Sprite {
-  final ImageMap _images;
-  Sprite _background;
-  Sprite _name;
-
-  MenuSprites(this._images) {
-    _background = new Sprite.fromImage(_images[_pathMenu + 'background.png']);
-    _background.position = Offset(1030.0, 540.0);
-    _background.size = new Size(1920.0, 1080.0);
-    addChild(_background);
-    _name = new Sprite.fromImage(_images[_pathMenu + 'name.png']);
-    _name.position = Offset(1000.0, 1000.0);
-    addChild(_name);
-  }
-}
-
-class GeraltMenu extends SpriteGroup {
-
-  GeraltMenu(PersistentGameState gameState) : super (gameState, _pathMenu + 'geralt', Offset(500.0, 500.0), 3.0) {
-    createGroup();
-    runMainMotion();
-  }
-}
-
-class Bonfire extends SpriteGroup {
-
-  Bonfire(PersistentGameState gameState) : super (gameState, _pathMenu + 'bonfire', Offset(500.0, 500.0), 3.0) {
-    createGroup();
-    runMainMotion();
-  }
-}
-
-class Effects extends SpriteGroup {
-
-  Effects(PersistentGameState gameState) : super (gameState, _pathMenu + 'effects', Offset(1030.0, 540.0), 8.0) {
-    createGroup();
-    runMainMotion();
+  MenuSprites(ImageMap images) {
+    Sprite background =
+        new Sprite.fromImage(images[pathMenu + 'background.png'])
+          ..position = Offset(960, 540);
+    background.size = background.size * increase;
+    Sprite gameName = new Sprite.fromImage(images[pathMenu + 'name.png'])
+      ..position = Offset(1050, 200);
+    gameName.size = gameName.size * increase;
+    Sprite title = new Sprite.fromImage(images[pathMenu + 'start.png'])
+      ..position = Offset(1500, 850);
+    title.size = title.size * increase;
+    addChild(background);
+    addChild(gameName);
+    addChild(title);
   }
 }

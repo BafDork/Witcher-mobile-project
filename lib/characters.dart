@@ -3,13 +3,18 @@ part of game;
 class Geralt extends Character {
   Chort _chort;
 
-  Geralt(PersistentGameState gameState) : super(gameState) {
-    _health = 100.0;
-    _step = 10.0;
-    _x = 1030.0;
-    _static = new Static(_gameState, _pathGameplay + 'geralt/static', Offset(1030.0, 540.0), 3.0);
-    _moving = new Dynamic(_gameState, _pathGameplay + 'geralt/moving', Offset(1030.0, 540.0), 3.0);
-    _attack = new Dynamic(_gameState, _pathGameplay + 'geralt/attack', Offset(1030.0, 540.0), 1.5);
+  Geralt(PersistentGameState gameState, GameOverCallBack gameOverCallBack)
+      : super(gameState, gameOverCallBack) {
+    _health = 100;
+    _force = 15;
+    _step = 5.8;
+    _x = 300;
+    _static = new SpriteGroup(_gameState, Offset(300, 810), 3)
+      ..createGroup(pathGameplay + 'geralt/static');
+    _moving = new SpriteGroup(_gameState, Offset(300, 810), 0.7, false)
+      ..createGroup(pathGameplay + 'geralt/moving');
+    _attack = new SpriteGroup(_gameState, Offset(300, 810), 1, false, false)
+      ..createGroup(pathGameplay + 'geralt/attack');
   }
 
   void _move(double scale) {
@@ -33,8 +38,11 @@ class Geralt extends Character {
 
   Future<void> attack() async {
     _attack._enable = false;
-    if ((_x - _chort._x).abs() < 150) {
-      _chort._health -= 25;
+    if ((_x - _chort._x).abs() < 295) {
+      _chort._health -= _force;
+      if (_chort._health <= 0) {
+        _gameOverCallback(true);
+      }
     }
     if (_moving._enable) {
       _moving.stopMainMotion();
@@ -44,12 +52,12 @@ class Geralt extends Character {
     }
     _completeAttack = false;
     _attack.runMainMotion();
-    await Future.delayed(Duration(milliseconds: 1900));
+    await Future.delayed(Duration(milliseconds: 1500));
     await _endingAttack();
   }
 
   Future<void> _endingAttack() async {
-    _attack.stopMainMotion();
+    _attack.spritesInvisibleAll();
     _static.runMainMotion();
     _completeAttack = true;
   }
@@ -58,21 +66,25 @@ class Geralt extends Character {
 class Chort extends Character {
   Geralt _geralt;
 
-  Chort(PersistentGameState gameState) : super(gameState) {
-    _health = 100.0;
-    _step = 5.0;
-    _x = 500.0;
-    _static = new Static(_gameState, _pathGameplay + 'chort/static',
-        Offset(500.0, 500.0), 3.0);
-    _moving = new Dynamic(_gameState, _pathGameplay + 'chort/moving', Offset(500.0, 500.0), 3.0);
-    _attack = new Dynamic(_gameState, _pathGameplay + 'chort/attack', Offset(500.0, 500.0), 3.0);
+  Chort(PersistentGameState gameState, GameOverCallBack gameOverCallback)
+      : super(gameState, gameOverCallback) {
+    _health = 100;
+    _force = 25;
+    _step = 3;
+    _x = 1600;
+    _static = new SpriteGroup(_gameState, Offset(1600, 810), 3, false)
+      ..createGroup(pathGameplay + 'chort/static');
+    _moving = new SpriteGroup(_gameState, Offset(1600, 780), 0.8)
+      ..createGroup(pathGameplay + 'chort/moving');
+    _attack = new SpriteGroup(_gameState, Offset(1600, 810), 1, false, false)
+      ..createGroup(pathGameplay + 'chort/attack');
   }
 
   Future<void> _update() async {
     if (!_completeAttack) {
       return;
     }
-    if ((_x - _geralt._x).abs() > 200) {
+    if ((_x - _geralt._x).abs() > 235) {
       double step = _step;
       bool side;
       if (_x > _geralt._x) {
@@ -89,17 +101,20 @@ class Chort extends Character {
       _attack.changePosition(step);
       _x += step;
     } else {
-        _geralt._health -= 25;
-        _moving.stopMainMotion();
-        _completeAttack = false;
-        _attack.runMainMotion();
-        await Future.delayed(Duration(milliseconds: 1900));
-        await _endingAttack();
+      _geralt._health -= _force;
+      if (_geralt._health <= 0) {
+        _gameOverCallback(false);
+      }
+      _moving.stopMainMotion();
+      _completeAttack = false;
+      _attack.runMainMotion();
+      await Future.delayed(Duration(milliseconds: 4000));
+      await _endingAttack();
     }
   }
 
   Future<void> _endingAttack() async {
-    _attack.stopMainMotion();
+    _attack.spritesInvisibleAll();
     _moving.runMainMotion();
     _completeAttack = true;
   }
@@ -107,41 +122,23 @@ class Chort extends Character {
 
 abstract class Character {
   PersistentGameState _gameState;
+  GameOverCallBack _gameOverCallback;
+  bool _completeAttack = true;
+  bool _reflect = false;
   double _health;
   double _force;
   double _step;
   double _x;
-  bool _completeAttack = true;
-  bool _reflect = false;
-  Static _static;
-  Dynamic _moving;
-  Dynamic _attack;
+  SpriteGroup _static;
+  SpriteGroup _moving;
+  SpriteGroup _attack;
 
-  Character(this._gameState);
+  Character(this._gameState, this._gameOverCallback);
 
   void changeSide() {
     _reflect = !_reflect;
     _static.reflectAll(_reflect);
     _moving.reflectAll(_reflect);
     _attack.reflectAll(_reflect);
-  }
-}
-
-class Static extends SpriteGroup {
-
-  Static(PersistentGameState gameState, String path, Offset position, double duration,
-      [Size size])
-      : super(gameState, path, position, duration) {
-    createGroup();
-  }
-}
-
-class Dynamic extends SpriteGroup {
-  bool _enable = false;
-
-  Dynamic(PersistentGameState gameState, String path, Offset position, double duration,
-      [Size size])
-      : super(gameState, path, position, duration) {
-    createGroup();
   }
 }

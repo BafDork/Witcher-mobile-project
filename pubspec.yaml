@@ -8,8 +8,11 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  sensors: ^2.0.3
   spritewidget: ^0.9.24
   path_provider: ^2.0.1
+  audioplayers: ^0.19.1
+  flutter_launcher_icons: ^0.9.1
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -18,6 +21,11 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+
+flutter_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/icon.png"
 
 
 # For information on the generic Dart part of this file, see the
@@ -32,11 +40,14 @@ flutter:
   uses-material-design: true
 
   assets:
+    - assets/
     - assets/menu/
     - assets/menu/geralt/
     - assets/menu/bonfire/
+    - assets/menu/bonfire/sprites/
     - assets/menu/effects/
     - assets/gameplay/
+    - assets/gameplay/sword/
     - assets/gameplay/background/
     - assets/gameplay/geralt/static/
     - assets/gameplay/geralt/moving/
@@ -44,6 +55,11 @@ flutter:
     - assets/gameplay/chort/static/
     - assets/gameplay/chort/moving/
     - assets/gameplay/chort/attack/
+    - assets/game_end/
+    - assets/game_end/defeat/
+    - assets/game_end/defeat/background/
+    - assets/game_end/defeat/background/sprites/
+    - assets/game_end/victory/
 
   # To add assets to your application, add an assets section, like this:
   # assets:

@@ -1,28 +1,32 @@
 part of game;
 
 abstract class Screen {
+  StatefulWidget _screenWidget;
   PersistentGameState _gameState;
   VoidCallback _loadingCallback;
-  List<String> _assets = [];
   bool _loaded = false;
   ImageMap _images;
 
-  Screen(PersistentGameState gameState) {
-    _gameState = gameState;
-  }
+  Screen(this._gameState);
 
   Future<void> loadScreen(VoidCallback loadingCallback) async {
     _loadingCallback = loadingCallback;
-    _getAssets();
+    _loadSounds();
     await _loadAssets();
-    await Future.delayed(Duration(seconds: 1)); // check loading screen working
     await _completingLoad();
+  }
+
+  void _loadSounds() {
+    _gameState._cache.clearAll();
+    List<String> sounds = getSounds();
+    _gameState._cache.loadAll(sounds);
   }
 
   Future<void> _loadAssets() async {
     AssetBundle _bundle = rootBundle;
     _images = new ImageMap(_bundle);
-    await _images.load(_assets);
+    List<String> assets = _getAssets();
+    await _images.load(assets);
   }
 
   Future<void> _completingLoad() async {
@@ -31,9 +35,30 @@ abstract class Screen {
     _loadingCallback();
   }
 
-  _getAssets() {}
+  List<String> _getAssets() {
+    return null;
+  }
+
+  List<String> getSounds() {
+    return null;
+  }
 
   bool get loaded => _loaded;
 
-  PersistentGameState get gameState => _gameState;
+  StatefulWidget get screenWidget => _screenWidget;
+
+  set screenWidget(StatefulWidget value) {
+    _screenWidget = value;
+  }
+}
+
+bool checkHandleTouch(
+    Offset position, Offset pointLeftTop, Offset pointRightLower) {
+  if (position.dx >= pointLeftTop.dx &&
+      position.dx <= pointRightLower.dx &&
+      position.dy >= pointLeftTop.dy &&
+      position.dy <= pointRightLower.dy) {
+    return true;
+  }
+  return false;
 }
